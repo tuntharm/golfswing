@@ -1,0 +1,1064 @@
+{
+  "shaft_fan": {
+    "visible": true,
+    "lines": [
+      {
+        "grip": [
+          227.8,
+          445.6
+        ],
+        "head": [
+          450.0,
+          655.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          227.8,
+          445.1
+        ],
+        "head": [
+          445.3,
+          653.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          227.7,
+          441.7
+        ],
+        "head": [
+          440.7,
+          652.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          227.6,
+          440.6
+        ],
+        "head": [
+          436.0,
+          650.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          225.1,
+          432.5
+        ],
+        "head": [
+          431.3,
+          649.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          223.9,
+          427.6
+        ],
+        "head": [
+          426.7,
+          647.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          222.2,
+          416.6
+        ],
+        "head": [
+          422.0,
+          646.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          221.4,
+          413.6
+        ],
+        "head": [
+          416.0,
+          623.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          221.1,
+          403.0
+        ],
+        "head": [
+          410.0,
+          600.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          227.5,
+          401.9
+        ],
+        "head": [
+          305.0,
+          465.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          209.4,
+          361.1
+        ],
+        "head": [
+          200.0,
+          330.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          200.5,
+          351.8
+        ],
+        "head": [
+          122.5,
+          197.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          201.6,
+          327.7
+        ],
+        "head": [
+          45.0,
+          65.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          212.5,
+          326.7
+        ],
+        "head": [
+          40.0,
+          76.7
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          194.9,
+          302.4
+        ],
+        "head": [
+          35.0,
+          88.3
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          192.7,
+          298.2
+        ],
+        "head": [
+          30.0,
+          100.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          160.4,
+          232.0
+        ],
+        "head": [
+          28.7,
+          94.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          156.2,
+          226.2
+        ],
+        "head": [
+          27.3,
+          88.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          149.3,
+          201.5
+        ],
+        "head": [
+          26.0,
+          82.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          144.0,
+          197.0
+        ],
+        "head": [
+          24.5,
+          81.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          136.8,
+          179.1
+        ],
+        "head": [
+          23.0,
+          81.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          135.5,
+          180.7
+        ],
+        "head": [
+          21.5,
+          80.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          131.0,
+          177.0
+        ],
+        "head": [
+          20.0,
+          80.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          126.6,
+          174.8
+        ],
+        "head": [
+          45.0,
+          88.8
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          124.1,
+          173.9
+        ],
+        "head": [
+          70.0,
+          97.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          127.6,
+          174.4
+        ],
+        "head": [
+          95.0,
+          106.2
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          123.7,
+          212.3
+        ],
+        "head": [
+          90.0,
+          113.8
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          125.6,
+          213.4
+        ],
+        "head": [
+          80.0,
+          112.5
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          126.5,
+          215.4
+        ],
+        "head": [
+          70.0,
+          111.2
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          146.8,
+          268.5
+        ],
+        "head": [
+          60.0,
+          110.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          168.4,
+          291.3
+        ],
+        "head": [
+          56.7,
+          113.3
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          204.2,
+          323.1
+        ],
+        "head": [
+          53.3,
+          116.7
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          203.3,
+          329.7
+        ],
+        "head": [
+          50.0,
+          120.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          231.5,
+          361.9
+        ],
+        "head": [
+          46.7,
+          126.7
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          236.0,
+          362.7
+        ],
+        "head": [
+          43.3,
+          133.3
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          251.4,
+          413.3
+        ],
+        "head": [
+          40.0,
+          140.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          255.4,
+          415.7
+        ],
+        "head": [
+          60.0,
+          330.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          240.7,
+          421.8
+        ],
+        "head": [
+          435.0,
+          636.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          226.7,
+          376.8
+        ],
+        "head": [
+          446.7,
+          604.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          231.3,
+          366.1
+        ],
+        "head": [
+          458.3,
+          572.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          232.6,
+          352.1
+        ],
+        "head": [
+          470.0,
+          540.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          222.9,
+          345.5
+        ],
+        "head": [
+          340.0,
+          410.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          214.1,
+          303.5
+        ],
+        "head": [
+          80.0,
+          150.0
+        ],
+        "downswing": true
+      }
+    ]
+  },
+  "clubhead_curve": {
+    "visible": true,
+    "points": [
+      {
+        "point": [
+          450.0,
+          655.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          445.3,
+          653.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          440.7,
+          652.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          436.0,
+          650.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          431.3,
+          649.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          426.7,
+          647.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          422.0,
+          646.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          416.0,
+          623.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          410.0,
+          600.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          305.0,
+          465.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          200.0,
+          330.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          122.5,
+          197.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          45.0,
+          65.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          40.0,
+          76.7
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          35.0,
+          88.3
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          30.0,
+          100.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          28.7,
+          94.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          27.3,
+          88.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          26.0,
+          82.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          24.5,
+          81.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          23.0,
+          81.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          21.5,
+          80.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          20.0,
+          80.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          45.0,
+          88.8
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          70.0,
+          97.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          95.0,
+          106.2
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          120.0,
+          115.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          122.5,
+          115.6
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          125.0,
+          116.2
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          127.5,
+          116.9
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          130.0,
+          117.5
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          132.5,
+          118.1
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          135.0,
+          118.8
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          137.5,
+          119.4
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          140.0,
+          120.0
+        ],
+        "downswing": false
+      },
+      {
+        "point": [
+          130.0,
+          118.8
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          120.0,
+          117.5
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          110.0,
+          116.2
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          100.0,
+          115.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          90.0,
+          113.8
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          80.0,
+          112.5
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          70.0,
+          111.2
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          60.0,
+          110.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          56.7,
+          113.3
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          53.3,
+          116.7
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          50.0,
+          120.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          46.7,
+          126.7
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          43.3,
+          133.3
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          40.0,
+          140.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          60.0,
+          330.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          220.0,
+          560.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          435.0,
+          636.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          446.7,
+          604.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          458.3,
+          572.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          470.0,
+          540.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          340.0,
+          410.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          210.0,
+          280.0
+        ],
+        "downswing": true
+      },
+      {
+        "point": [
+          80.0,
+          150.0
+        ],
+        "downswing": true
+      }
+    ]
+  },
+  "clubhead": {
+    "visible": true
+  },
+  "perpendicular": {
+    "visible": false,
+    "lines": [
+      {
+        "grip": [
+          127.8,
+          184.7
+        ],
+        "head": [
+          120.0,
+          115.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          127.2,
+          186.8
+        ],
+        "head": [
+          122.5,
+          115.6
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          130.5,
+          198.3
+        ],
+        "head": [
+          125.0,
+          116.2
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          133.0,
+          201.2
+        ],
+        "head": [
+          127.5,
+          116.9
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          132.0,
+          201.5
+        ],
+        "head": [
+          130.0,
+          117.5
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          130.7,
+          204.4
+        ],
+        "head": [
+          132.5,
+          118.1
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          129.0,
+          205.1
+        ],
+        "head": [
+          135.0,
+          118.8
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          126.8,
+          201.9
+        ],
+        "head": [
+          137.5,
+          119.4
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          125.8,
+          207.8
+        ],
+        "head": [
+          140.0,
+          120.0
+        ],
+        "downswing": false
+      },
+      {
+        "grip": [
+          125.2,
+          209.3
+        ],
+        "head": [
+          130.0,
+          118.8
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          120.8,
+          209.6
+        ],
+        "head": [
+          120.0,
+          117.5
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          118.4,
+          207.7
+        ],
+        "head": [
+          110.0,
+          116.2
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          121.4,
+          210.9
+        ],
+        "head": [
+          100.0,
+          115.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          246.7,
+          426.7
+        ],
+        "head": [
+          220.0,
+          560.0
+        ],
+        "downswing": true
+      },
+      {
+        "grip": [
+          216.8,
+          318.4
+        ],
+        "head": [
+          210.0,
+          280.0
+        ],
+        "downswing": true
+      }
+    ]
+  }
+}

@@ -20,6 +20,7 @@ from swinglab.analyze import (
     elevation_deg,
     shaft_angle_deg,
 )
+from swinglab.render import draw_swing_fan, overlay_catalog
 from swinglab.synthetic import design_swing, paint_swing
 
 
@@ -127,6 +128,32 @@ class SwingReadingTest(unittest.TestCase):
         poses = [flip_pose(sample["pose"]) for sample in samples]
         report = analyze_frames(frames, fps=30, poses=poses, handed="left", playback_speed=0.25)
         self.assertEqual(report["reading"], "shallowed")
+
+
+class OverlayElementTest(unittest.TestCase):
+    def test_perpendicular_shaft_stays_in_the_data_and_off_the_picture(self) -> None:
+        frame = np.zeros((200, 200, 3), np.uint8)
+        samples = [
+            {"grip": (20.0, 180.0), "head": (180.0, 40.0), "downswing": False},
+            {"grip": (100.0, 160.0), "head": (100.0, 30.0), "downswing": False},
+        ]
+        hidden = draw_swing_fan(frame, samples, 1, show_legend=False)
+        shown = draw_swing_fan(
+            frame,
+            samples,
+            1,
+            show_legend=False,
+            elements={"perpendicular": True},
+        )
+        self.assertLess(int(hidden[50, 100].max()), 30)
+        self.assertGreater(int(shown[50, 100, 0]), 200)
+        self.assertGreater(int(hidden[:, :, 0].max()), 200)
+        catalog = overlay_catalog(samples)
+        self.assertFalse(catalog["perpendicular"]["visible"])
+        self.assertTrue(catalog["shaft_fan"]["visible"])
+        self.assertEqual(len(catalog["perpendicular"]["lines"]), 1)
+        self.assertEqual(len(catalog["shaft_fan"]["lines"]), 1)
+        self.assertEqual(catalog["perpendicular"]["lines"][0]["head"], [100.0, 30.0])
 
 
 @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is required")

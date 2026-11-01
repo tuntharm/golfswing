@@ -92,6 +92,70 @@ def _skeleton(image: np.ndarray, pose: dict | None) -> None:
 UPSWING_COLOR = (255, 150, 20)
 DOWNSWING_COLOR = (20, 140, 255)
 
+# A shaft this close to vertical is perpendicular to the ground. The line stays
+# in the drawing data. It is hidden until something turns that element on.
+PERPENDICULAR_TILT_DEG = 75.0
+
+DEFAULT_ELEMENTS = {
+    "shaft_fan": True,
+    "clubhead_curve": True,
+    "clubhead": True,
+    "perpendicular": False,
+}
+
+
+def shaft_tilt_deg(grip: tuple[float, float], head: tuple[float, float]) -> float:
+    """0 is horizontal, 90 is vertical."""
+    angle = abs(math.degrees(math.atan2(head[1] - grip[1], head[0] - grip[0]))) % 180
+    if angle > 90:
+        angle = 180 - angle
+    return angle
+
+
+def shaft_element(grip: tuple[float, float], head: tuple[float, float]) -> str:
+    if shaft_tilt_deg(grip, head) >= PERPENDICULAR_TILT_DEG:
+        return "perpendicular"
+    return "shaft_fan"
+
+
+def element_visible(elements: dict | None, name: str) -> bool:
+    if elements is None or name not in elements:
+        return DEFAULT_ELEMENTS[name]
+    return bool(elements[name])
+
+
+def overlay_catalog(samples: list[dict], elements: dict | None = None) -> dict:
+    """Every drawn element, including the ones left off the picture."""
+    flags = dict(DEFAULT_ELEMENTS)
+    if elements:
+        flags.update(elements)
+    grouped: dict[str, list] = {"shaft_fan": [], "perpendicular": []}
+    heads = []
+    for sample in samples:
+        grip = sample.get("grip")
+        head = sample.get("head")
+        if not grip or not head:
+            continue
+        grouped[shaft_element(grip, head)].append(
+            {
+                "grip": [round(float(grip[0]), 1), round(float(grip[1]), 1)],
+                "head": [round(float(head[0]), 1), round(float(head[1]), 1)],
+                "downswing": bool(sample.get("downswing")),
+            }
+        )
+        heads.append(
+            {
+                "point": [round(float(head[0]), 1), round(float(head[1]), 1)],
+                "downswing": bool(sample.get("downswing")),
+            }
+        )
+    return {
+        "shaft_fan": {"visible": flags["shaft_fan"], "lines": grouped["shaft_fan"]},
+        "clubhead_curve": {"visible": flags["clubhead_curve"], "points": heads},
+        "clubhead": {"visible": flags["clubhead"]},
+        "perpendicular": {"visible": flags["perpendicular"], "lines": grouped["perpendicular"]},
+    }
+
 
 def _point_xy(point) -> tuple[float, float] | None:
     if point is None:
@@ -142,64 +206,70 @@ def _smooth_path(points: list[tuple[float, float]], window: int = 5) -> list[tup
     return list(zip(xs.tolist(), ys.tolist()))
 
 
+def _draw_shaft(image: np.ndarray, sample: dict, color: tuple[int, int, int], thickness: int, elements: dict | None) -> None:
+    grip = sample["grip"]
+    head = sample["head"]
+    if not element_visible(elements, shaft_element(grip, head)):
+        return
+    cv2.line(
+        image,
+        (int(grip[0]), int(grip[1])),
+        (int(head[0]), int(head[1])),
+        color,
+        thickness,
+        cv2.LINE_AA,
+    )
+
+
 def draw_swing_fan(
     frame: np.ndarray,
     samples: list[dict],
     up_to: int,
     *,
     show_legend: bool = True,
+    elements: dict | None = None,
 ) -> np.ndarray:
     """Draw the club the way a launch-monitor screen does.
 
     Each sample is grip, head, and whether that moment is the downswing.
     Shaft lines stay on screen. A curve runs through the clubhead.
+    A shaft perpendicular to the ground is kept in the samples and left off
+    the picture unless ``elements['perpendicular']`` is true.
     """
     image = frame.copy()
     overlay = image.copy()
     shown = [sample for sample in samples[: up_to + 1] if sample.get("head") and sample.get("grip")]
     step = 1 if len(shown) < 18 else max(1, len(shown) // 16)
-    for sample in shown[::step]:
-        color = DOWNSWING_COLOR if sample.get("downswing") else UPSWING_COLOR
-        grip = sample["grip"]
-        head = sample["head"]
-        cv2.line(
-            overlay,
-            (int(grip[0]), int(grip[1])),
-            (int(head[0]), int(head[1])),
-            color,
-            3,
-            cv2.LINE_AA,
-        )
-    cv2.addWeighted(overlay, 0.72, image, 0.28, 0, image)
+    if element_visible(elements, "shaft_fan") or element_visible(elements, "perpendicular"):
+        for sample in shown[::step]:
+            color = DOWNSWING_COLOR if sample.get("downswing") else UPSWING_COLOR
+            _draw_shaft(overlay, sample, color, 3, elements)
+        cv2.addWeighted(overlay, 0.72, image, 0.28, 0, image)
 
-    up_heads = [sample["head"] for sample in shown if not sample.get("downswing")]
-    down_heads = [sample["head"] for sample in shown if sample.get("downswing")]
-    for heads, color in ((up_heads, UPSWING_COLOR), (down_heads, DOWNSWING_COLOR)):
-        curve = _smooth_path(heads, 5)
-        for start, end in zip(curve, curve[1:]):
-            cv2.line(
-                image,
-                (int(start[0]), int(start[1])),
-                (int(end[0]), int(end[1])),
-                color,
-                8,
-                cv2.LINE_AA,
-            )
-        for head in curve[:: max(1, len(curve) // 12)]:
-            cv2.circle(image, (int(head[0]), int(head[1])), 7, color, -1, cv2.LINE_AA)
+    if element_visible(elements, "clubhead_curve"):
+        up_heads = [sample["head"] for sample in shown if not sample.get("downswing")]
+        down_heads = [sample["head"] for sample in shown if sample.get("downswing")]
+        for heads, color in ((up_heads, UPSWING_COLOR), (down_heads, DOWNSWING_COLOR)):
+            curve = _smooth_path(heads, 5)
+            for start, end in zip(curve, curve[1:]):
+                cv2.line(
+                    image,
+                    (int(start[0]), int(start[1])),
+                    (int(end[0]), int(end[1])),
+                    color,
+                    8,
+                    cv2.LINE_AA,
+                )
+            for head in curve[:: max(1, len(curve) // 12)]:
+                cv2.circle(image, (int(head[0]), int(head[1])), 7, color, -1, cv2.LINE_AA)
 
     current = samples[up_to] if up_to < len(samples) else None
     if current and current.get("grip") and current.get("head"):
         color = DOWNSWING_COLOR if current.get("downswing") else UPSWING_COLOR
-        cv2.line(
-            image,
-            (int(current["grip"][0]), int(current["grip"][1])),
-            (int(current["head"][0]), int(current["head"][1])),
-            color,
-            6,
-            cv2.LINE_AA,
-        )
-        cv2.circle(image, (int(current["head"][0]), int(current["head"][1])), 12, (0, 0, 255), -1, cv2.LINE_AA)
+        if element_visible(elements, "shaft_fan") or element_visible(elements, "perpendicular"):
+            _draw_shaft(image, current, color, 6, elements)
+        if element_visible(elements, "clubhead"):
+            cv2.circle(image, (int(current["head"][0]), int(current["head"][1])), 12, (0, 0, 255), -1, cv2.LINE_AA)
     if show_legend:
         cv2.rectangle(image, (12, 12), (430, 92), (10, 14, 18), -1)
         cv2.circle(image, (32, 58), 9, UPSWING_COLOR, -1)
