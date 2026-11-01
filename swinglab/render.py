@@ -221,6 +221,12 @@ def _draw_shaft(image: np.ndarray, sample: dict, color: tuple[int, int, int], th
     )
 
 
+def playback_label(speed: float) -> str:
+    """On-screen speed, matching the factor written into the video."""
+    text = f"{float(speed):.3f}".rstrip("0").rstrip(".")
+    return f"{text}x"
+
+
 def draw_swing_fan(
     frame: np.ndarray,
     samples: list[dict],
@@ -228,6 +234,7 @@ def draw_swing_fan(
     *,
     show_legend: bool = True,
     elements: dict | None = None,
+    playback_speed: float = 0.125,
 ) -> np.ndarray:
     """Draw the club the way a launch-monitor screen does.
 
@@ -273,7 +280,16 @@ def draw_swing_fan(
         cv2.rectangle(image, (12, 12), (430, 92), (10, 14, 18), -1)
         cv2.circle(image, (32, 58), 9, UPSWING_COLOR, -1)
         cv2.circle(image, (210, 58), 9, DOWNSWING_COLOR, -1)
-        cv2.putText(image, "0.25x", (24, 38), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(
+            image,
+            playback_label(playback_speed),
+            (24, 38),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
         cv2.putText(image, "up", (48, 64), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(image, "down", (226, 64), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
     return image

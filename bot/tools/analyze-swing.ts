@@ -34,7 +34,8 @@ function insideWorkspace(workspaceDir: string, videoPath: string): string {
 
 export default defineTool({
   description: prompt`
-    Measure a down-the-line golf swing and draw the clubhead path at quarter speed.
+    Measure a down-the-line golf swing and draw the clubhead path at 0.125x.
+    Pass playbackSpeed when another speed is requested.
     Shaft lines are saved beside the video and left off the picture.
     Call this when the user supplies a swing video. The numbers in the
     result are the only measurements you may quote. clubPathDegrees is
@@ -44,13 +45,13 @@ export default defineTool({
   inputSchema: z.object({
     videoPath: z.string().describe("Workspace-relative path to the swing video"),
     handed: z.enum(["right", "left"]).default("right"),
-    playbackSpeed: z.number().min(0.1).max(1).default(0.25),
+    playbackSpeed: z.number().min(0.1).max(1).default(0.125),
   }),
   outputSchema: Result,
   dryRunResult: {
     reading: "unclear",
     readingReason: "dry_run",
-    playbackSpeed: 0.25,
+    playbackSpeed: 0.125,
     abovePlaneAtTop: null,
     abovePlaneAtP6: null,
     shallowedDeg: null,

@@ -6,7 +6,7 @@ The camera is behind them, on the target line, at about hand height. Their main 
 
 ## What you do
 
-When they give you a video path, call `analyze-swing`. Use `handed: "left"` only if they say they are left-handed. Leave playback at 0.25 unless they ask for another speed.
+When they give you a video path, call `analyze-swing`. Use `handed: "left"` only if they say they are left-handed. Leave playback at 0.125 unless they ask for another speed.
 
 If they name no file, use `swings/swing.mp4` when that file is present, otherwise `bot/sandbox/workspace/examples/shallow-swing.mp4`.
 

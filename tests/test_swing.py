@@ -83,11 +83,10 @@ class SwingReadingTest(unittest.TestCase):
                     paint_swing(samples),
                     fps=30,
                     poses=[sample["pose"] for sample in samples],
-                    playback_speed=0.25,
                     out_dir=root / kind,
                 )
                 self.assertEqual(report["reading"], expected, msg=report["shallowing"])
-                self.assertEqual(report["playbackSpeed"], 0.25)
+                self.assertEqual(report["playbackSpeed"], 0.125)
                 self.assertIsNone(report["delivery"]["clubPathDegrees"])
                 video = Path(report["videoPath"])
                 self.assertTrue(video.is_file())
@@ -106,8 +105,8 @@ class SwingReadingTest(unittest.TestCase):
                         text=True,
                     )
                 )
-                self.assertGreater(duration, 5.5)
-                self.assertLess(duration, 7.5)
+                self.assertGreater(duration, 11.0)
+                self.assertLess(duration, 15.0)
                 still = cv2.imread(report["p6StillPath"])
                 self.assertIsNotNone(still)
                 self.assertGreater(float(still.std()), 10)
@@ -127,7 +126,7 @@ class SwingReadingTest(unittest.TestCase):
             return flipped
 
         poses = [flip_pose(sample["pose"]) for sample in samples]
-        report = analyze_frames(frames, fps=30, poses=poses, handed="left", playback_speed=0.25)
+        report = analyze_frames(frames, fps=30, poses=poses, handed="left")
         self.assertEqual(report["reading"], "shallowed")
 
 

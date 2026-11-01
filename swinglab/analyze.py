@@ -783,9 +783,17 @@ def _path_samples(samples: list[dict], phases: dict) -> list[dict]:
     return built
 
 
-def _render(frames: list[np.ndarray], samples: list[dict], report: dict) -> list[np.ndarray]:
+def _render(
+    frames: list[np.ndarray],
+    samples: list[dict],
+    report: dict,
+    playback_speed: float,
+) -> list[np.ndarray]:
     path = _path_samples(samples, report["phases"])
-    return [draw_swing_fan(frame, path, index) for index, frame in enumerate(frames)]
+    return [
+        draw_swing_fan(frame, path, index, playback_speed=playback_speed)
+        for index, frame in enumerate(frames)
+    ]
 
 
 def _public_report(report: dict, speed: float, extras: dict) -> dict:
@@ -801,7 +809,7 @@ def analyze_frames(
     fps: float,
     poses: list[dict | None] | None = None,
     handed: str = "right",
-    playback_speed: float = 0.25,
+    playback_speed: float = 0.125,
     out_dir: str | Path | None = None,
     mirror_output: bool = True,
 ) -> dict:
@@ -833,7 +841,7 @@ def analyze_frames(
     path_samples: list[dict] = []
     if report.get("phases") is not None:
         path_samples = _path_samples(samples, report["phases"])
-        drawn = _render(working, samples, report)
+        drawn = _render(working, samples, report, speed)
         if mirror_output and flips % 2 == 1:
             drawn = _flip_frames(drawn)
 
@@ -904,7 +912,7 @@ def analyze_video(
     out_dir: str | Path,
     *,
     handed: str = "right",
-    playback_speed: float = 0.25,
+    playback_speed: float = 0.125,
 ) -> dict:
     source = Path(path)
     marks_path = source.with_name("swing-marks.json")

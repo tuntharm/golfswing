@@ -47,14 +47,17 @@ def render_marked_swing(
     elements_path: Path,
     *,
     fps: float = 66.0,
-    playback_speed: float = 0.25,
+    playback_speed: float = 0.125,
 ) -> dict:
     poses = detect_poses(frames, fps)
     samples = marked_samples(frames, marks, poses)
     first = int(marks["first"])
     last = int(marks["last"])
     catalog = overlay_catalog(samples[first : last + 1])
-    clip = [draw_swing_fan(frames[index], samples, index) for index in range(first, last + 1)]
+    clip = [
+        draw_swing_fan(frames[index], samples, index, playback_speed=playback_speed)
+        for index in range(first, last + 1)
+    ]
     clip += [clip[-1]] * 25
     write_playback(clip, video_path, fps, playback_speed)
     elements_path.write_text(json.dumps(catalog, indent=2) + "\n")

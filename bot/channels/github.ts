@@ -14,7 +14,7 @@ export default githubChannel({
       context: [
         "Look for a swing video in this pull request.",
         "Call analyze-swing on that file.",
-        "The video it returns is the clubhead path at quarter speed. Shaft lines stay in the elements file and off the picture.",
+        "The video it returns is the clubhead path at 0.125x. Shaft lines stay in the elements file and off the picture.",
       ],
     };
   },

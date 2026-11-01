@@ -2,7 +2,7 @@
 
 A down-the-line swing, measured in code, then explained by an agent.
 
-You film from behind, on the target line, at about hand height. The tool draws the address shaft line and the club shaft, saves a video that plays at quarter speed, and says whether the shaft moved down toward that line. That move is shallowing. It is the thing to look at when the downswing stays steep.
+You film from behind, on the target line, at about hand height. The tool draws the address shaft line and the club shaft, saves a video that plays at 0.125x, and says whether the shaft moved down toward that line. That move is shallowing. It is the thing to look at when the downswing stays steep.
 
 One camera behind you cannot measure TrackMan club path, face angle, or clubhead speed. Those are left out on purpose. A steep delivery often goes with an out-to-in path, and the report says so without turning it into a degree number.
 
@@ -17,13 +17,13 @@ npm run dev
 Paste this as the first message:
 
 ```text
-Analyze swings/swing.mp4. I am right-handed. Call analyze-swing. Draw the clubhead path at 0.25x. Leave the shaft lines off the video and keep them in the elements file. Return the video.
+Analyze swings/swing.mp4. I am right-handed. Call analyze-swing. Draw the clubhead path at 0.125x. Leave the shaft lines off the video and keep them in the elements file. Return the video.
 ```
 
 On a GitHub pull request in `tuntharm/golfswing`, this comment wakes the same bot once it is hosted:
 
 ```text
-@golf-swing Analyze the swing video in this pull request. I am right-handed. Call analyze-swing. Return the quarter-speed video with the clubhead path. Leave the shaft lines off the picture.
+@golf-swing Analyze the swing video in this pull request. I am right-handed. Call analyze-swing. Return the 0.125x video with the clubhead path. Leave the shaft lines off the picture.
 ```
 
 ## Run it on a video
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 python -m swinglab path/to/swing.mp4 -o swing-out
 ```
 
-`swing-out/swing-analysis.mp4` plays at 0.25x. The clubhead path is blue on the way up and orange on the way down. `swing-out/report.json` has the reading.
+`swing-out/swing-analysis.mp4` plays at 0.125x. The clubhead path is blue on the way up and orange on the way down. `swing-out/report.json` has the reading.
 
 The slowed tracer for the clip in `swings/swing.mp4` is `swings/swing-traced.mp4`. That video shows the clubhead path. The shaft lines are stored in `swings/swing-traced.elements.json` and left off the picture, so a later screen can turn them on.
 
