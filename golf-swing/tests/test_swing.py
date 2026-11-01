@@ -131,7 +131,7 @@ class SwingReadingTest(unittest.TestCase):
 
 
 class OverlayElementTest(unittest.TestCase):
-    def test_perpendicular_shaft_stays_in_the_data_and_off_the_picture(self) -> None:
+    def test_shaft_lines_stay_in_the_data_and_off_the_picture(self) -> None:
         frame = np.zeros((200, 200, 3), np.uint8)
         samples = [
             {"grip": (20.0, 180.0), "head": (180.0, 40.0), "downswing": False},
@@ -143,17 +143,20 @@ class OverlayElementTest(unittest.TestCase):
             samples,
             1,
             show_legend=False,
-            elements={"perpendicular": True},
+            elements={"shaft_fan": True, "perpendicular": True},
         )
-        self.assertLess(int(hidden[50, 100].max()), 30)
-        self.assertGreater(int(shown[50, 100, 0]), 200)
-        self.assertGreater(int(hidden[:, :, 0].max()), 200)
+        # (60, 145) sits on the diagonal shaft and off the clubhead curve.
+        self.assertLess(int(hidden[145, 60].max()), 30)
+        self.assertGreater(int(shown[145, 60, 0]), 150)
+        # The clubhead path between the two heads stays.
+        self.assertGreater(int(hidden[35, 140, 0]), 200)
         catalog = overlay_catalog(samples)
+        self.assertFalse(catalog["shaft_fan"]["visible"])
         self.assertFalse(catalog["perpendicular"]["visible"])
-        self.assertTrue(catalog["shaft_fan"]["visible"])
-        self.assertEqual(len(catalog["perpendicular"]["lines"]), 1)
+        self.assertTrue(catalog["clubhead_curve"]["visible"])
         self.assertEqual(len(catalog["shaft_fan"]["lines"]), 1)
-        self.assertEqual(catalog["perpendicular"]["lines"][0]["head"], [100.0, 30.0])
+        self.assertEqual(len(catalog["perpendicular"]["lines"]), 1)
+        self.assertEqual(len(catalog["clubhead_curve"]["points"]), 2)
 
 
 @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg is required")

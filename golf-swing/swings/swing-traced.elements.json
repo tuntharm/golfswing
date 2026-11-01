@@ -1,6 +1,6 @@
 {
   "shaft_fan": {
-    "visible": true,
+    "visible": false,
     "lines": [
       {
         "grip": [

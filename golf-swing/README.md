@@ -16,7 +16,7 @@ python -m swinglab path/to/swing.mp4 -o swing-out
 
 `swing-out/swing-analysis.mp4` plays at 0.25x. The clubhead path is blue on the way up and orange on the way down. `swing-out/report.json` has the reading.
 
-The slowed tracer for the clip in `swings/swing.mp4` is `swings/swing-traced.mp4`. Shafts that stand perpendicular to the ground are stored in `swings/swing-traced.elements.json` and left off that video. A later toggle can turn that element on with the others: the shaft fan, the clubhead curve, and the clubhead dot.
+The slowed tracer for the clip in `swings/swing.mp4` is `swings/swing-traced.mp4`. That video shows the clubhead path. The shaft lines are stored in `swings/swing-traced.elements.json` and left off the picture, so a later screen can turn them on.
 
 ```text
 reading: shallowed | not_shallowing | steepened | mixed | unclear

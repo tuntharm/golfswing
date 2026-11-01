@@ -1,6 +1,7 @@
 """Redraw a marked swing with the overlay elements.
 
-The perpendicular shaft is kept in the elements file and left off the video.
+Shaft lines are kept in the elements file and left off the video.
+The clubhead path stays on the video.
 """
 
 from __future__ import annotations

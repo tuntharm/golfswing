@@ -97,7 +97,7 @@ DOWNSWING_COLOR = (20, 140, 255)
 PERPENDICULAR_TILT_DEG = 75.0
 
 DEFAULT_ELEMENTS = {
-    "shaft_fan": True,
+    "shaft_fan": False,
     "clubhead_curve": True,
     "clubhead": True,
     "perpendicular": False,
@@ -232,9 +232,8 @@ def draw_swing_fan(
     """Draw the club the way a launch-monitor screen does.
 
     Each sample is grip, head, and whether that moment is the downswing.
-    Shaft lines stay on screen. A curve runs through the clubhead.
-    A shaft perpendicular to the ground is kept in the samples and left off
-    the picture unless ``elements['perpendicular']`` is true.
+    The clubhead curve stays on screen. Shaft lines are kept in the element
+    data and left off the picture unless ``elements['shaft_fan']`` is true.
     """
     image = frame.copy()
     overlay = image.copy()
