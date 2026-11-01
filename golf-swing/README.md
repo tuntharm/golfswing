@@ -6,6 +6,26 @@ You film from behind, on the target line, at about hand height. The tool draws t
 
 One camera behind you cannot measure TrackMan club path, face angle, or clubhead speed. Those are left out on purpose. A steep delivery often goes with an out-to-in path, and the report says so without turning it into a degree number.
 
+## Start the bot
+
+From `golf-swing`, after `npx @grok/agent-sdk login`:
+
+```bash
+npm run dev
+```
+
+Paste this as the first message:
+
+```text
+Analyze swings/swing.mp4. I am right-handed. Call analyze-swing. Draw the clubhead path at 0.25x. Leave the shaft lines off the video and keep them in the elements file. Return the video.
+```
+
+On a GitHub pull request in `tuntharm/golfswing`, this comment wakes the same bot once it is hosted:
+
+```text
+@golf-swing Analyze the swing video in this pull request. I am right-handed. Call analyze-swing. Return the quarter-speed video with the clubhead path. Leave the shaft lines off the picture.
+```
+
 ## Run it on a video
 
 ```bash

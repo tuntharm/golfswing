@@ -5,7 +5,7 @@ description: Use after analyze-swing returns, to explain shallowing and the limi
 # Explain a measured swing
 
 1. Say the reading in ordinary words, with the degrees from the tool.
-2. Say the video plays at `playbackSpeed` (0.25 means quarter speed).
+2. Say the video plays at `playbackSpeed` (0.25 means quarter speed). It shows the clubhead path. Shaft lines are in `elementsPath` and are off the picture.
 3. Positive `abovePlaneDeg` means the middle of the shaft is on the sky side of the address shaft line. That is the steep side. Shallowing is that number falling from the top to P6.
 4. `shallowed`: the delivery shaft is on or under the address line. If `shallowedDeg` is large, say it dropped by that many degrees from the top. If it is near zero, say the delivery was already on or under the line. Mention one other measured note only if the tool flagged it.
 5. `not_shallowing` or `steepened`: the shaft stayed above the address line, or moved further above it. That is the pattern of a swing that is not shallowing. One cue only: from the top, let the clubhead drop behind the hands so the shaft moves down toward the address line before the body turns through.

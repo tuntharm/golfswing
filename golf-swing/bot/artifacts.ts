@@ -4,7 +4,7 @@ import * as z from "zod/v4";
 export default defineArtifacts({
   kinds: {
     "swing-report": {
-      description: "Quarter-speed swing video with the address plane and shaft drawn on it.",
+      description: "Quarter-speed swing video. The clubhead path is drawn. Shaft lines are left off the picture.",
       schema: z.object({
         reading: z.string(),
         playbackSpeed: z.number(),

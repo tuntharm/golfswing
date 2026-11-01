@@ -8,4 +8,7 @@ export default defineAgent({
       { id: "fast", value: "true" },
     ],
   },
+  local: {
+    workspaceDir: ".",
+  },
 });

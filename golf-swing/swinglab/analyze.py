@@ -21,7 +21,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from swinglab.render import draw_analysis_frame, paint_hud, write_playback
+from swinglab.render import draw_swing_fan, overlay_catalog, write_playback
 
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
@@ -589,24 +589,6 @@ def _flip_frames(frames: list[np.ndarray]) -> list[np.ndarray]:
     return [cv2.flip(frame, 1) for frame in frames]
 
 
-def _phase_label(index: int, phases: dict) -> str:
-    if index <= phases["address"]:
-        return "address"
-    if index < phases["toe_up"]:
-        return "takeaway"
-    if index < phases["top"]:
-        return "backswing"
-    if index == phases["top"]:
-        return "top"
-    if index < phases["shaft_parallel"]:
-        return "transition"
-    if index < phases["impact"]:
-        return "delivery"
-    if index == phases["impact"]:
-        return "impact"
-    return "finish"
-
-
 def _round(value: float | None, digits: int = 1) -> float | None:
     if value is None or isinstance(value, float) and math.isnan(value):
         return None
@@ -777,57 +759,33 @@ def _hip_motion(samples: list[dict], address: int, impact: int) -> dict:
     return {"hipsInImage": label, "hipDropPx": _round(drop)}
 
 
-def _hud(index: int, phases: dict, report: dict, speed: float) -> list[str]:
-    label = _phase_label(index, phases)
-    above = report["_above"][index]
-    above_text = "n/a" if above is None else f"{above:+.0f} deg"
-    reading = report["reading"].replace("_", " ")
-    return [
-        f"{speed:.2f}x   {label}",
-        "blue upswing   orange downswing",
-        f"Above plane {above_text}",
-        reading,
-    ]
-
-
-def _render(frames: list[np.ndarray], samples: list[dict], report: dict, speed: float) -> list[np.ndarray]:
-    phases = report["phases"]
-    plane = report.get("_plane")
-    drawn = []
-    trail: list[tuple[float, float] | None] = []
-    for index, (frame, sample) in enumerate(zip(frames, samples)):
+def _path_samples(samples: list[dict], phases: dict) -> list[dict]:
+    """Clubhead samples for the path video. Shaft points stay on each sample."""
+    top = phases["top"]
+    start = phases["address"]
+    stop = min(len(samples) - 1, phases.get("finish", phases["impact"]))
+    built = []
+    for index, sample in enumerate(samples):
         reliable = (
-            sample.get("head") is not None
+            start <= index <= stop
+            and sample.get("head") is not None
+            and sample.get("grip") is not None
             and not sample.get("predicted")
             and sample.get("confidence", 0) >= 0.45
         )
-        head = sample.get("head") if reliable else None
-        if head is None:
-            trail.append(None)
-        else:
-            trail.append((head[0], head[1], index >= phases["top"]))
-        visible_trail = trail
-        image = draw_analysis_frame(
-            frame,
-            plane=plane,
-            grip=sample.get("grip"),
-            head=sample.get("head"),
-            predicted=bool(sample.get("predicted")),
-            above_plane_deg=report["_above"][index],
-            trail=visible_trail,
-            pose=sample.get("pose"),
-            hud_lines=[],
-            after_top=index >= phases["top"],
+        built.append(
+            {
+                "grip": sample.get("grip") if reliable else None,
+                "head": sample.get("head") if reliable else None,
+                "downswing": index > top,
+            }
         )
-        drawn.append(image)
-    return drawn
+    return built
 
 
-def _add_hud(frames: list[np.ndarray], phases: dict, report: dict, speed: float) -> list[np.ndarray]:
-    painted = []
-    for index, frame in enumerate(frames):
-        painted.append(paint_hud(frame, _hud(index, phases, report, speed)))
-    return painted
+def _render(frames: list[np.ndarray], samples: list[dict], report: dict) -> list[np.ndarray]:
+    path = _path_samples(samples, report["phases"])
+    return [draw_swing_fan(frame, path, index) for index, frame in enumerate(frames)]
 
 
 def _public_report(report: dict, speed: float, extras: dict) -> dict:
@@ -872,11 +830,12 @@ def analyze_frames(
 
     report = build_report(samples, fps, working[0].shape[1::-1])
     drawn = frames
+    path_samples: list[dict] = []
     if report.get("phases") is not None:
-        drawn = _render(working, samples, report, speed)
+        path_samples = _path_samples(samples, report["phases"])
+        drawn = _render(working, samples, report)
         if mirror_output and flips % 2 == 1:
             drawn = _flip_frames(drawn)
-        drawn = _add_hud(drawn, report["phases"], report, speed)
 
     output = {}
     if out_dir is not None and report.get("phases") is not None:
@@ -893,8 +852,11 @@ def analyze_frames(
         }
         for name, index in stills.items():
             cv2.imwrite(str(destination / name), drawn[index])
+        elements_path = destination / "swing-analysis.elements.json"
+        elements_path.write_text(json.dumps(overlay_catalog(path_samples), indent=2) + "\n")
         output = {
             "videoPath": str(video_path),
+            "elementsPath": str(elements_path),
             "addressStillPath": str(destination / "address.jpg"),
             "topStillPath": str(destination / "top.jpg"),
             "p6StillPath": str(destination / "p6.jpg"),

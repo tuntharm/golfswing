@@ -14,6 +14,7 @@ const Result = z.object({
   readingReason: z.string(),
   playbackSpeed: z.number(),
   videoPath: z.string().optional(),
+  elementsPath: z.string().optional(),
   abovePlaneAtTop: z.number().nullable(),
   abovePlaneAtP6: z.number().nullable(),
   shallowedDeg: z.number().nullable(),
@@ -33,7 +34,8 @@ function insideWorkspace(workspaceDir: string, videoPath: string): string {
 
 export default defineTool({
   description: prompt`
-    Measure a down-the-line golf swing and draw it at quarter speed.
+    Measure a down-the-line golf swing and draw the clubhead path at quarter speed.
+    Shaft lines are saved beside the video and left off the picture.
     Call this when the user supplies a swing video. The numbers in the
     result are the only measurements you may quote. clubPathDegrees is
     always null: one down-the-line camera cannot measure TrackMan path.
@@ -88,6 +90,7 @@ type Report = {
   readingReason?: string;
   playbackSpeed?: number;
   videoPath?: string;
+  elementsPath?: string;
   warnings?: string[];
   shallowing?: {
     abovePlaneDeg?: { top?: number | null; p6?: number | null };
@@ -103,6 +106,7 @@ function shape(report: Report, playbackSpeed: number) {
     readingReason: report.readingReason ?? "no_reading",
     playbackSpeed: report.playbackSpeed ?? playbackSpeed,
     videoPath: report.videoPath,
+    elementsPath: report.elementsPath,
     abovePlaneAtTop: report.shallowing?.abovePlaneDeg?.top ?? null,
     abovePlaneAtP6: report.shallowing?.abovePlaneDeg?.p6 ?? null,
     shallowedDeg: report.shallowing?.shallowedDeg ?? null,
