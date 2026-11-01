@@ -906,6 +906,12 @@ def analyze_video(
     handed: str = "right",
     playback_speed: float = 0.25,
 ) -> dict:
+    source = Path(path)
+    marks_path = source.with_name("swing-marks.json")
+    if marks_path.is_file():
+        from swinglab.trace import analyze_marked_video
+
+        return analyze_marked_video(source, marks_path, Path(out_dir), playback_speed)
     frames, fps, trimmed = load_video(path)
     poses = _load_pose_sidecar(Path(path))
     if poses is not None and len(poses) != len(frames):

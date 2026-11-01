@@ -15,6 +15,7 @@ import numpy as np
 from swinglab.analyze import (
     above_plane_deg,
     analyze_frames,
+    analyze_video,
     classify_shallowing,
     detect_shaft,
     elevation_deg,
@@ -128,6 +129,20 @@ class SwingReadingTest(unittest.TestCase):
         poses = [flip_pose(sample["pose"]) for sample in samples]
         report = analyze_frames(frames, fps=30, poses=poses, handed="left", playback_speed=0.25)
         self.assertEqual(report["reading"], "shallowed")
+
+
+class MarkedSwingTest(unittest.TestCase):
+    def test_saved_clubhead_path_is_what_the_tool_returns(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "swing.mp4").write_bytes(b"source")
+            (root / "swing-traced.mp4").write_bytes(b"traced-video")
+            (root / "swing-marks.json").write_text("{}\n")
+            (root / "swing-traced.elements.json").write_text('{"shaft_fan":{"visible":false}}\n')
+            report = analyze_video(root / "swing.mp4", root / "out")
+            self.assertEqual(report["reading"], "unclear")
+            self.assertIsNone(report["shallowing"]["abovePlaneDeg"]["top"])
+            self.assertEqual((root / "out" / "swing-analysis.mp4").read_bytes(), b"traced-video")
 
 
 class OverlayElementTest(unittest.TestCase):

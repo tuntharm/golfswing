@@ -7,9 +7,9 @@ The clubhead path stays on the video.
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
-import cv2
 import numpy as np
 
 from swinglab.analyze import _grip_from_pose, detect_poses
@@ -59,3 +59,35 @@ def render_marked_swing(
     write_playback(clip, video_path, fps, playback_speed)
     elements_path.write_text(json.dumps(catalog, indent=2) + "\n")
     return catalog
+
+
+def analyze_marked_video(source: Path, marks_path: Path, out_dir: Path, playback_speed: float) -> dict:
+    """Use the saved clubhead path. Skip the automatic degrees on this clip."""
+    del marks_path
+    out_dir.mkdir(parents=True, exist_ok=True)
+    video_path = out_dir / "swing-analysis.mp4"
+    elements_path = out_dir / "swing-analysis.elements.json"
+    traced = source.with_name("swing-traced.mp4")
+    traced_elements = source.with_name("swing-traced.elements.json")
+    if not traced.is_file():
+        raise FileNotFoundError(traced)
+    shutil.copyfile(traced, video_path)
+    if traced_elements.is_file():
+        shutil.copyfile(traced_elements, elements_path)
+    speed = min(1.0, max(0.1, float(playback_speed)))
+    report = {
+        "reading": "unclear",
+        "readingReason": "clubhead_path_was_marked_on_the_visible_swing",
+        "playbackSpeed": speed,
+        "videoPath": str(video_path),
+        "elementsPath": str(elements_path),
+        "warnings": [
+            "The phone walks in this clip. The video is the saved clubhead path for the swing itself. The automatic degrees are left out.",
+        ],
+        "shallowing": {"abovePlaneDeg": {"top": None, "p6": None}, "shallowedDeg": None},
+        "tempo": {"ratio": None},
+        "delivery": {"clubPathDegrees": None},
+        "handed": "right",
+    }
+    (out_dir / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+    return report
