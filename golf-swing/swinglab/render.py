@@ -88,22 +88,40 @@ def _skeleton(image: np.ndarray, pose: dict | None) -> None:
         cv2.circle(image, (int(nose[0]), int(nose[1])), 5, color, 1, cv2.LINE_AA)
 
 
-def _trail(image: np.ndarray, points: list[tuple[float, float] | None]) -> None:
+# BGR. Blue is the way up. Orange is the way down.
+UPSWING_COLOR = (255, 150, 20)
+DOWNSWING_COLOR = (20, 140, 255)
+
+
+def _point_xy(point) -> tuple[float, float] | None:
+    if point is None:
+        return None
+    return (float(point[0]), float(point[1]))
+
+
+def _point_downswing(point) -> bool:
+    return len(point) >= 3 and bool(point[2])
+
+
+def _trail(image: np.ndarray, points: list) -> None:
     previous = None
-    limit = image.shape[1] * 0.18
+    limit = max(image.shape[0], image.shape[1]) * 0.22
     for point in points:
-        if point is None or previous is None:
+        current = _point_xy(point)
+        if current is None or previous is None:
+            previous = point if current is not None else None
+            continue
+        prev_xy = _point_xy(previous)
+        if math.hypot(current[0] - prev_xy[0], current[1] - prev_xy[1]) > limit:
             previous = point
             continue
-        if math.hypot(point[0] - previous[0], point[1] - previous[1]) > limit:
-            previous = point
-            continue
+        color = DOWNSWING_COLOR if _point_downswing(point) else UPSWING_COLOR
         cv2.line(
             image,
-            (int(previous[0]), int(previous[1])),
-            (int(point[0]), int(point[1])),
-            (255, 190, 40),
-            2,
+            (int(prev_xy[0]), int(prev_xy[1])),
+            (int(current[0]), int(current[1])),
+            color,
+            7,
             cv2.LINE_AA,
         )
         previous = point

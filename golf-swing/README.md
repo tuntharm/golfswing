@@ -14,7 +14,9 @@ pip install -r requirements.txt
 python -m swinglab path/to/swing.mp4 -o swing-out
 ```
 
-`swing-out/swing-analysis.mp4` plays at 0.25x. `swing-out/report.json` has the reading.
+`swing-out/swing-analysis.mp4` plays at 0.25x. The clubhead path is blue on the way up and orange on the way down. `swing-out/report.json` has the reading.
+
+The slowed tracer for the clip in `swings/swing.mp4` is `swings/swing-traced.mp4`.
 
 ```text
 reading: shallowed | not_shallowing | steepened | mixed | unclear

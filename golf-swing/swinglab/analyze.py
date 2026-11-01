@@ -784,9 +784,9 @@ def _hud(index: int, phases: dict, report: dict, speed: float) -> list[str]:
     reading = report["reading"].replace("_", " ")
     return [
         f"{speed:.2f}x   {label}",
+        "blue upswing   orange downswing",
         f"Above plane {above_text}",
         reading,
-        "DTL estimate, not TrackMan",
     ]
 
 
@@ -802,8 +802,11 @@ def _render(frames: list[np.ndarray], samples: list[dict], report: dict, speed: 
             and sample.get("confidence", 0) >= 0.45
         )
         head = sample.get("head") if reliable else None
-        trail.append(head)
-        visible_trail = trail[-50:]
+        if head is None:
+            trail.append(None)
+        else:
+            trail.append((head[0], head[1], index >= phases["top"]))
+        visible_trail = trail
         image = draw_analysis_frame(
             frame,
             plane=plane,
