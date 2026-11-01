@@ -1,0 +1,10 @@
+node_modules
+.env
+.env.local
+.agent-serve
+memory
+__pycache__/
+*.pyc
+.pytest_cache/
+swing-out/
+*.normalized.mp4
