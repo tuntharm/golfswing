@@ -299,6 +299,7 @@ def detect_shaft(
 
     scores = np.zeros(len(angles), dtype=np.float32)
     ends = np.zeros(len(angles), dtype=np.int32)
+    out_flags = np.zeros(len(angles), dtype=bool)
     for index, row in enumerate(values):
         smooth = np.convolve(row, np.ones(5) / 5, mode="same")
         row_mask = masked[index]
@@ -312,6 +313,10 @@ def detect_shaft(
         started = False
         unmasked_seen = 0
         for step, hot in enumerate(smooth >= threshold):
+            if not valid[index][step]:
+                if started:
+                    out_flags[index] = True
+                break
             if row_mask[step]:
                 continue
             unmasked_seen += 1
@@ -328,13 +333,17 @@ def detect_shaft(
         if last < 6:
             continue
         length_px = float(radii[last] - radii[0])
-        if length_px < 45:
+        # Short irons and hybrids are shorter than a driver. A shaft that
+        # runs off the picture is still the club, so it keeps a full weight.
+        if out_flags[index]:
+            length_weight = 1.0
+        elif length_px < 28:
             length_weight = 0.15
         elif length_px > min(width, height) * 0.7:
             length_weight = 0.35
         else:
             length_weight = 1.0
-        if last >= len(radii) - 4:
+        if last >= len(radii) - 4 and not out_flags[index]:
             length_weight *= 0.35
         visible_segment = visible[: last + 1]
         visible_segment = visible_segment[visible_segment > 0]
@@ -387,12 +396,15 @@ def detect_shaft(
         float(grip[0] + radius * math.cos(math.radians(angle))),
         float(grip[1] + radius * math.sin(math.radians(angle))),
     )
+    border = 6
+    out_of_frame = bool(out_flags[best]) or head[0] < border or head[1] < border or head[0] > width - 1 - border or head[1] > height - 1 - border
     return {
         "grip": (float(grip[0]), float(grip[1])),
         "head": head,
         "angle": angle,
         "confidence": confidence,
         "predicted": False,
+        "out_of_frame": out_of_frame,
     }
 
 
@@ -454,7 +466,8 @@ def track_shafts(frames: list[np.ndarray], poses: list[dict | None]) -> list[dic
             samples.append(_empty_sample(pose))
             continue
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        full_search = (not locked) or missed >= 10
+        was_out = bool(samples and samples[-1].get("out_of_frame"))
+        full_search = (not locked) or missed >= 6 or was_out
         detected = detect_shaft(
             gray,
             grip,
@@ -480,6 +493,13 @@ def track_shafts(frames: list[np.ndarray], poses: list[dict | None]) -> list[dic
                 detected["confidence"] = min(float(detected["confidence"]), 0.2)
                 samples.append(detected)
             continue
+        if detected.get("out_of_frame") and angle is not None and detected["confidence"] >= 0.2:
+            # The clubhead has left the picture. Keep the shaft up to the edge
+            # and wait for it to come back on the way down.
+            previous = angle
+            missed = 0
+            samples.append(detected)
+            continue
         jumped = (
             previous is not None
             and not full_search
@@ -488,6 +508,13 @@ def track_shafts(frames: list[np.ndarray], poses: list[dict | None]) -> list[dic
         )
         weak = detected["confidence"] < 0.3 or angle is None
         if weak or jumped:
+            if was_out:
+                held = _empty_sample(pose)
+                held["grip"] = (float(grip[0]), float(grip[1]))
+                held["out_of_frame"] = True
+                samples.append(held)
+                missed += 1
+                continue
             if previous is None:
                 samples.append(_empty_sample(pose))
                 missed += 1
@@ -773,11 +800,15 @@ def _path_samples(samples: list[dict], phases: dict) -> list[dict]:
             and not sample.get("predicted")
             and sample.get("confidence", 0) >= 0.45
         )
+        on_edge = bool(sample.get("out_of_frame")) and sample.get("head") is not None and sample.get("grip") is not None
+        keep = reliable or on_edge
         built.append(
             {
-                "grip": sample.get("grip") if reliable else None,
-                "head": sample.get("head") if reliable else None,
+                "index": index,
+                "grip": sample.get("grip") if keep else None,
+                "head": sample.get("head") if keep else None,
                 "downswing": index > top,
+                "out_of_frame": on_edge,
             }
         )
     return built
@@ -882,7 +913,9 @@ def analyze_frames(
         },
     )
     if out_dir is not None:
-        Path(out_dir, "report.json").write_text(json.dumps(public, indent=2))
+        destination = Path(out_dir)
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / "report.json").write_text(json.dumps(public, indent=2))
     return public
 
 
@@ -907,6 +940,103 @@ def _load_pose_sidecar(path: Path) -> list[dict | None] | None:
     return poses
 
 
+def find_swing_windows(path: str | Path) -> list[dict]:
+    """Hands rising then falling mark a swing, for an iron, hybrid, wood, or driver.
+
+    A long clip is searched in full. The first few seconds are often the
+    golfer walking in, so the swing is not assumed to start at frame 0.
+    """
+    source = Path(path)
+    capture = cv2.VideoCapture(str(source))
+    fps = float(capture.get(cv2.CAP_PROP_FPS) or 0) or 30.0
+    scout_frames: list[np.ndarray] = []
+    scout_indexes: list[int] = []
+    index = 0
+    while True:
+        ok, frame = capture.read()
+        if not ok:
+            break
+        if index % 5 == 0:
+            height, width = frame.shape[:2]
+            scale = 360.0 / max(width, 1)
+            scout_frames.append(cv2.resize(frame, (360, max(2, int(height * scale)))))
+            scout_indexes.append(index)
+        index += 1
+    capture.release()
+    if len(scout_frames) < 8:
+        return []
+    poses = detect_poses(scout_frames, fps / 5.0)
+    frame_height = scout_frames[0].shape[0]
+    rise = max(28.0, frame_height * 0.12)
+    hands = []
+    for frame_index, pose in zip(scout_indexes, poses):
+        grip = _grip_from_pose(pose)
+        hands.append((frame_index, None if grip is None else float(grip[1])))
+    span = max(3, int(round(0.7 * fps / 5.0)))
+    windows = []
+    used_until = -1
+    for center in range(span, len(hands) - span):
+        frame_index, height_y = hands[center]
+        if height_y is None or frame_index <= used_until:
+            continue
+        before = [value for _, value in hands[center - span : center] if value is not None]
+        after = [value for _, value in hands[center + 1 : center + span + 1] if value is not None]
+        if len(before) < 2 or len(after) < 2:
+            continue
+        # Image y grows downward. A top is higher than the hands on both sides.
+        if height_y > min(before) or height_y > min(after):
+            continue
+        if height_y + rise > max(before) or height_y + rise > max(after):
+            continue
+        start = max(0, frame_index - int(round(1.5 * fps)))
+        end = frame_index + int(round(2.2 * fps))
+        windows.append({"startFrame": start, "endFrame": end, "topFrame": frame_index})
+        used_until = end
+    return windows
+
+
+def load_span(path: str | Path, start_frame: int, end_frame: int, fps: float) -> tuple[list[np.ndarray], float]:
+    source = Path(path)
+    start_sec = max(0.0, start_frame / fps)
+    duration = max(0.4, (end_frame - start_frame) / fps)
+    temp_dir = Path("/tmp/golf-swing")
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    clip = temp_dir / f"{source.stem}-{start_frame}-{end_frame}.mp4"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-ss",
+            f"{start_sec:.3f}",
+            "-t",
+            f"{duration:.3f}",
+            "-i",
+            str(source),
+            "-vf",
+            f"scale='min({MAX_WIDTH},iw)':-2",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(clip),
+        ],
+        check=True,
+    )
+    capture = cv2.VideoCapture(str(clip))
+    clip_fps = float(capture.get(cv2.CAP_PROP_FPS) or 0) or fps
+    frames = []
+    while len(frames) < MAX_FRAMES:
+        ok, frame = capture.read()
+        if not ok:
+            break
+        frames.append(frame)
+    capture.release()
+    return frames, clip_fps
+
+
 def analyze_video(
     path: str | Path,
     out_dir: str | Path,
@@ -915,30 +1045,97 @@ def analyze_video(
     playback_speed: float = 0.125,
 ) -> dict:
     source = Path(path)
+    capture = cv2.VideoCapture(str(source))
+    fps = float(capture.get(cv2.CAP_PROP_FPS) or 0) or 30.0
+    frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    capture.release()
+    windows = find_swing_windows(source) if frame_count > MAX_FRAMES else []
+    traced = source.with_name("swing-traced.mp4")
     marks_path = source.with_name("swing-marks.json")
-    if marks_path.is_file():
+    if traced.is_file() and marks_path.is_file():
         from swinglab.trace import analyze_marked_video
 
-        return analyze_marked_video(source, marks_path, Path(out_dir), playback_speed)
-    frames, fps, trimmed = load_video(path)
-    poses = _load_pose_sidecar(Path(path))
-    if poses is not None and len(poses) != len(frames):
-        poses = None
-        trimmed = True
-    report = analyze_frames(
-        frames,
-        fps=fps,
-        poses=poses,
-        handed=handed,
-        playback_speed=playback_speed,
-        out_dir=out_dir,
-    )
-    if trimmed:
-        report["warnings"] = list(report.get("warnings") or []) + [
-            f"Only the first {len(frames)} frames were analyzed.",
+        report = analyze_marked_video(source, marks_path, Path(out_dir), playback_speed)
+        report["swingCount"] = len(windows)
+        report["swings"] = [
+            {
+                "startSec": round(window["startFrame"] / fps, 2),
+                "endSec": round(window["endFrame"] / fps, 2),
+            }
+            for window in windows
         ]
+        if windows:
+            times = ", ".join(f"{item['startSec']:.0f}s" for item in report["swings"])
+            report["warnings"] = list(report.get("warnings") or []) + [
+                f"Hands rise at {times}. The returned video is the saved clubhead path. Automatic lines on a moving phone still miss the club once it leaves the frame.",
+            ]
         Path(out_dir, "report.json").write_text(json.dumps(report, indent=2))
-    return report
+        return report
+    if not windows:
+        frames, fps, trimmed = load_video(path)
+        poses = _load_pose_sidecar(source)
+        if poses is not None and len(poses) != len(frames):
+            poses = None
+            trimmed = True
+        report = analyze_frames(
+            frames,
+            fps=fps,
+            poses=poses,
+            handed=handed,
+            playback_speed=playback_speed,
+            out_dir=out_dir,
+        )
+        if trimmed:
+            report["warnings"] = list(report.get("warnings") or []) + [
+                f"Only the first {len(frames)} frames were analyzed.",
+            ]
+            Path(out_dir, "report.json").write_text(json.dumps(report, indent=2))
+        return report
+
+    destination = Path(out_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    found = []
+    primary = None
+    for number, window in enumerate(windows, start=1):
+        frames, clip_fps = load_span(source, window["startFrame"], window["endFrame"], fps)
+        if len(frames) < 8:
+            continue
+        swing_dir = destination / f"swing-{number}"
+        report = analyze_frames(
+            frames,
+            fps=clip_fps,
+            handed=handed,
+            playback_speed=playback_speed,
+            out_dir=swing_dir,
+        )
+        report["window"] = {
+            "startSec": round(window["startFrame"] / fps, 2),
+            "endSec": round(window["endFrame"] / fps, 2),
+        }
+        report["warnings"] = list(report.get("warnings") or []) + [
+            "Same tracker for iron, hybrid, wood, and driver. The clubhead path stops at the frame edge and starts again when the club comes back.",
+        ]
+        (swing_dir / "report.json").write_text(json.dumps(report, indent=2))
+        found.append(report)
+        if report.get("videoPath") and (primary is None or primary.get("reading") == "unclear"):
+            primary = report
+    if primary is None:
+        raise ValueError(f"no swing could be read from {source}")
+    summary = {
+        **primary,
+        "swingCount": len(found),
+        "swings": [
+            {
+                "startSec": item["window"]["startSec"],
+                "endSec": item["window"]["endSec"],
+                "reading": item.get("reading"),
+                "videoPath": item.get("videoPath"),
+            }
+            for item in found
+        ],
+    }
+    (destination / "report.json").write_text(json.dumps(summary, indent=2))
+    return summary
 
 
 def load_video(path: str | Path) -> tuple[list[np.ndarray], float, bool]:

@@ -131,17 +131,35 @@ class SwingReadingTest(unittest.TestCase):
 
 
 class MarkedSwingTest(unittest.TestCase):
-    def test_saved_clubhead_path_is_what_the_tool_returns(self) -> None:
+    def test_saved_clubhead_path_can_still_be_copied(self) -> None:
+        from swinglab.trace import analyze_marked_video
+
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            (root / "swing.mp4").write_bytes(b"source")
+            source = root / "swing.mp4"
+            source.write_bytes(b"source")
             (root / "swing-traced.mp4").write_bytes(b"traced-video")
             (root / "swing-marks.json").write_text("{}\n")
             (root / "swing-traced.elements.json").write_text('{"shaft_fan":{"visible":false}}\n')
-            report = analyze_video(root / "swing.mp4", root / "out")
+            report = analyze_marked_video(source, root / "swing-marks.json", root / "out", 0.125)
             self.assertEqual(report["reading"], "unclear")
             self.assertIsNone(report["shallowing"]["abovePlaneDeg"]["top"])
             self.assertEqual((root / "out" / "swing-analysis.mp4").read_bytes(), b"traced-video")
+
+    def test_curve_breaks_when_the_clubhead_leaves_the_frame(self) -> None:
+        from swinglab.render import draw_swing_fan
+
+        frame = np.zeros((200, 200, 3), np.uint8)
+        samples = [
+            {"index": 0, "grip": (40.0, 160.0), "head": (50.0, 150.0), "downswing": False},
+            {"index": 1, "grip": (40.0, 160.0), "head": (70.0, 20.0), "downswing": False, "out_of_frame": True},
+            {"index": 12, "grip": (40.0, 160.0), "head": (150.0, 40.0), "downswing": True},
+            {"index": 13, "grip": (40.0, 160.0), "head": (160.0, 80.0), "downswing": True},
+        ]
+        image = draw_swing_fan(frame, samples, 3, show_legend=False)
+        # The upswing ends at the top edge. The index gap must not stroke across to the downswing.
+        self.assertLess(int(image[30, 110].max()), 30)
+        self.assertGreater(int(image[50:75, 145:170, 2].max()), 150)
 
 
 class OverlayElementTest(unittest.TestCase):

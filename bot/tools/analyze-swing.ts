@@ -21,6 +21,17 @@ const Result = z.object({
   tempoRatio: z.number().nullable(),
   clubPathDegrees: z.null(),
   warnings: z.array(z.string()),
+  swingCount: z.number().optional(),
+  swings: z
+    .array(
+      z.object({
+        startSec: z.number(),
+        endSec: z.number(),
+        reading: z.string().optional(),
+        videoPath: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 function insideWorkspace(workspaceDir: string, videoPath: string): string {
@@ -93,6 +104,8 @@ type Report = {
   videoPath?: string;
   elementsPath?: string;
   warnings?: string[];
+  swingCount?: number;
+  swings?: { startSec: number; endSec: number; reading?: string; videoPath?: string }[];
   shallowing?: {
     abovePlaneDeg?: { top?: number | null; p6?: number | null };
     shallowedDeg?: number | null;
@@ -114,6 +127,8 @@ function shape(report: Report, playbackSpeed: number) {
     tempoRatio: report.tempo?.ratio ?? null,
     clubPathDegrees: null,
     warnings: report.warnings ?? [],
+    swingCount: report.swingCount,
+    swings: report.swings,
   };
 }
 

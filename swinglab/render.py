@@ -191,7 +191,7 @@ def _trail(image: np.ndarray, points: list) -> None:
         previous = point
 
 
-def _smooth_path(points: list[tuple[float, float]], window: int = 5) -> list[tuple[float, float]]:
+def _smooth_path(points: list[tuple[float, float]], window: int = 9) -> list[tuple[float, float]]:
     if len(points) < 3:
         return points
     xs = np.array([point[0] for point in points], dtype=float)
@@ -204,6 +204,52 @@ def _smooth_path(points: list[tuple[float, float]], window: int = 5) -> list[tup
         xs[0], ys[0] = points[0]
         xs[-1], ys[-1] = points[-1]
     return list(zip(xs.tolist(), ys.tolist()))
+
+
+def _curve_runs(samples: list[dict], *, downswing: bool, limit: float) -> list[list[tuple[float, float]]]:
+    """One clean run per stretch of the clubhead. A gap, or a jump, starts a new run."""
+    runs: list[list[tuple[float, float]]] = []
+    run: list[tuple[float, float]] = []
+    last_index = None
+    for sample in samples:
+        if bool(sample.get("downswing")) != downswing:
+            continue
+        head = sample.get("head")
+        index = sample.get("index")
+        if head is None:
+            if run:
+                runs.append(run)
+                run = []
+            last_index = None
+            continue
+        point = (float(head[0]), float(head[1]))
+        jumped = run and math.hypot(point[0] - run[-1][0], point[1] - run[-1][1]) > limit
+        skipped = last_index is not None and index is not None and index - last_index > 4
+        if jumped or skipped:
+            if run:
+                runs.append(run)
+            run = []
+        run.append(point)
+        last_index = index
+    if len(run) >= 2:
+        runs.append(run)
+    return runs
+
+
+def _draw_clean_curve(image: np.ndarray, samples: list[dict]) -> None:
+    limit = max(image.shape[0], image.shape[1]) * 0.45
+    for downswing, color in ((False, UPSWING_COLOR), (True, DOWNSWING_COLOR)):
+        for run in _curve_runs(samples, downswing=downswing, limit=limit):
+            curve = _smooth_path(run, 9)
+            for start, end in zip(curve, curve[1:]):
+                cv2.line(
+                    image,
+                    (int(round(start[0])), int(round(start[1]))),
+                    (int(round(end[0])), int(round(end[1]))),
+                    color,
+                    6,
+                    cv2.LINE_AA,
+                )
 
 
 def _draw_shaft(image: np.ndarray, sample: dict, color: tuple[int, int, int], thickness: int, elements: dict | None) -> None:
@@ -253,21 +299,7 @@ def draw_swing_fan(
         cv2.addWeighted(overlay, 0.72, image, 0.28, 0, image)
 
     if element_visible(elements, "clubhead_curve"):
-        up_heads = [sample["head"] for sample in shown if not sample.get("downswing")]
-        down_heads = [sample["head"] for sample in shown if sample.get("downswing")]
-        for heads, color in ((up_heads, UPSWING_COLOR), (down_heads, DOWNSWING_COLOR)):
-            curve = _smooth_path(heads, 5)
-            for start, end in zip(curve, curve[1:]):
-                cv2.line(
-                    image,
-                    (int(start[0]), int(start[1])),
-                    (int(end[0]), int(end[1])),
-                    color,
-                    8,
-                    cv2.LINE_AA,
-                )
-            for head in curve[:: max(1, len(curve) // 12)]:
-                cv2.circle(image, (int(head[0]), int(head[1])), 7, color, -1, cv2.LINE_AA)
+        _draw_clean_curve(image, samples[: up_to + 1])
 
     current = samples[up_to] if up_to < len(samples) else None
     if current and current.get("grip") and current.get("head"):
