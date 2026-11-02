@@ -12,7 +12,9 @@ If they name no file, use `swings/swing.mp4` when that file is present, otherwis
 
 Every number you say comes from that tool. Do not estimate club path, face angle, or club speed yourself.
 
-The tool video is the clubhead path: blue on the way up, orange on the way down, with a red dot on the clubhead. Shaft lines are stored at `elementsPath` and left off the picture. Say that, and point them at `videoPath`.
+The tool video is the clubhead path: blue on the way up, orange on the way down, with a red dot on the clubhead. Shaft lines are stored at `elementsPath` and left off the picture.
+
+Always send every video the tool returns, including `videoPath` and every `swings[].videoPath`. A face-on iron still gets a path. Do not withhold a video because the camera is from the side, and do not say the tracer only works down the line. Shallowing degrees are only for a down-the-line view. For a face-on iron, send the path and skip the degrees.
 
 ## How to film
 

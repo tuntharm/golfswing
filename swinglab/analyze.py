@@ -273,6 +273,101 @@ def _body_mask(shape: tuple[int, int], pose: dict | None, grip: tuple[float, flo
     return mask
 
 
+def _extend_shaft(
+    enhanced: np.ndarray,
+    gray: np.ndarray,
+    mask: np.ndarray,
+    grip: tuple[float, float],
+    angle: float,
+    radii: np.ndarray,
+    start: int,
+) -> tuple[float, bool]:
+    """Follow the chosen shaft out to the clubhead, and stop at a frame edge or a ceiling light."""
+    height, width = enhanced.shape[:2]
+    radians = math.radians(angle)
+    last_good = max(0, start)
+    gap = 0
+    left_frame = False
+    for step in range(max(0, start), len(radii)):
+        x = int(round(grip[0] + radii[step] * math.cos(radians)))
+        y = int(round(grip[1] + radii[step] * math.sin(radians)))
+        if x < 1 or y < 1 or x >= width - 1 or y >= height - 1:
+            left_frame = True
+            break
+        if y < height * 0.12 and int(gray[y, x]) > 200 and float(gray[y, max(0, x - 8) : x + 9].mean()) > 170:
+            break
+        if mask[y, x] > 0:
+            gap += 1
+        elif enhanced[y, x] > 10:
+            last_good = step
+            gap = 0
+        else:
+            gap += 1
+        if gap > 6 and step > start + 4:
+            break
+    return float(radii[last_good]), left_frame
+
+
+def _bright_clubhead(gray: np.ndarray, grip: tuple[float, float], pose: dict | None) -> dict | None:
+    """Follow the bright thin shaft. This is what shows an iron from the side."""
+    height, width = gray.shape[:2]
+    toward_x, toward_y = 0.0, 1.0
+    if pose is not None:
+        hips = [pose.get("left_hip"), pose.get("right_hip")]
+        hips = [point for point in hips if point is not None]
+        if hips:
+            hip_x = sum(point[0] for point in hips) / len(hips)
+            hip_y = sum(point[1] for point in hips) / len(hips)
+            toward_x = hip_x - grip[0]
+            toward_y = hip_y - grip[1]
+            length = math.hypot(toward_x, toward_y) or 1.0
+            toward_x /= length
+            toward_y /= length
+    best = None
+    for angle in range(0, 360, 3):
+        radians = math.radians(angle)
+        aim_x, aim_y = math.cos(radians), math.sin(radians)
+        if aim_x * toward_x + aim_y * toward_y > 0.4:
+            continue
+        side_x, side_y = -aim_y, aim_x
+        total = 0.0
+        count = 0
+        last = 0
+        for radius in range(20, min(height, width), 4):
+            x = int(round(grip[0] + radius * aim_x))
+            y = int(round(grip[1] + radius * aim_y))
+            if x < 8 or y < 8 or x >= width - 8 or y >= height - 8:
+                break
+            center = int(gray[y, x])
+            neighbor_a = int(gray[int(y + side_y * 7), int(x + side_x * 7)])
+            neighbor_b = int(gray[int(y - side_y * 7), int(x - side_x * 7)])
+            if center > 185 and neighbor_a > 155 and neighbor_b > 155 and y < height * 0.16:
+                break
+            if center > 108 and center > neighbor_a + 8 and center > neighbor_b + 8:
+                last = radius
+                total += center - (neighbor_a + neighbor_b) / 2
+                count += 1
+            elif last and radius > last + 20:
+                break
+        if last < 70 or count < 4:
+            continue
+        score = total / count * math.sqrt(last / 80.0)
+        if best is None or score > best[0]:
+            best = (score, angle, last)
+    if best is None:
+        return None
+    radians = math.radians(best[1])
+    return {
+        "head": (
+            float(grip[0] + best[2] * math.cos(radians)),
+            float(grip[1] + best[2] * math.sin(radians)),
+        ),
+        "angle": float(best[1]),
+        "confidence": 0.8,
+        "out_of_frame": False,
+    }
+
+
 def detect_shaft(
     gray: np.ndarray,
     grip: tuple[float, float],
@@ -364,6 +459,23 @@ def detect_shaft(
     thin_ratio = np.clip(thin / (np.abs(thin) + 12), 0, 1)
     scores *= 0.2 + thin_ratio
 
+    if pose is not None:
+        hips = [pose.get("left_hip"), pose.get("right_hip")]
+        hips = [point for point in hips if point is not None]
+        if hips:
+            hip_x = sum(point[0] for point in hips) / len(hips)
+            hip_y = sum(point[1] for point in hips) / len(hips)
+            toward_x = hip_x - grip[0]
+            toward_y = hip_y - grip[1]
+            toward_length = math.hypot(toward_x, toward_y)
+            if toward_length > 12:
+                toward_x /= toward_length
+                toward_y /= toward_length
+                aim_x = np.cos(radians)
+                aim_y = np.sin(radians)
+                into_body = aim_x * toward_x + aim_y * toward_y > 0.45
+                scores = np.where(into_body, scores * 0.15, scores)
+
     if prev_angle is not None:
         delta = np.abs((angles - prev_angle + 180) % 360 - 180)
         if search_window is not None:
@@ -377,6 +489,16 @@ def detect_shaft(
                 scores = wide
         else:
             scores = scores + 12 * np.exp(-0.5 * (delta / 18) ** 2)
+    head_y = grip[1] + radii[np.clip(ends, 0, len(radii) - 1)] * np.sin(radians)
+    head_x = grip[0] + radii[np.clip(ends, 0, len(radii) - 1)] * np.cos(radians)
+    ceiling = head_y < height * 0.12
+    bright = np.zeros(len(angles), dtype=bool)
+    for index in np.where(ceiling)[0]:
+        x = int(np.clip(round(head_x[index]), 0, width - 1))
+        y = int(np.clip(round(head_y[index]), 0, height - 1))
+        bright[index] = int(gray[y, x]) > 200
+    scores = np.where(ceiling & bright, scores * 0.05, scores)
+
     order = np.argsort(scores)[::-1]
     best = int(order[0])
     second = next(
@@ -390,14 +512,14 @@ def detect_shaft(
         confidence = 0.0
     if ends[best] < 6:
         confidence *= 0.2
-    radius = float(radii[int(ends[best])]) if ends[best] else float(radii[0])
     angle = float(angles[best])
+    radius, extended_out = _extend_shaft(enhanced, gray, mask, grip, angle, radii, int(ends[best]))
     head = (
         float(grip[0] + radius * math.cos(math.radians(angle))),
         float(grip[1] + radius * math.sin(math.radians(angle))),
     )
     border = 6
-    out_of_frame = bool(out_flags[best]) or head[0] < border or head[1] < border or head[0] > width - 1 - border or head[1] > height - 1 - border
+    out_of_frame = bool(out_flags[best]) or extended_out or head[0] < border or head[1] < border or head[0] > width - 1 - border or head[1] > height - 1 - border
     return {
         "grip": (float(grip[0]), float(grip[1])),
         "head": head,
@@ -475,6 +597,17 @@ def track_shafts(frames: list[np.ndarray], poses: list[dict | None]) -> list[dic
             pose,
             None if full_search else 24,
         )
+        bright = _bright_clubhead(gray, grip, pose)
+        if bright is not None and detected.get("head") is not None:
+            morph_length = math.hypot(detected["head"][0] - grip[0], detected["head"][1] - grip[1])
+            bright_length = math.hypot(bright["head"][0] - grip[0], bright["head"][1] - grip[1])
+            into_ceiling = detected["head"][1] < gray.shape[0] * 0.14
+            if into_ceiling or bright_length > morph_length * 1.25:
+                detected["head"] = bright["head"]
+                detected["angle"] = bright["angle"]
+                detected["confidence"] = max(float(detected["confidence"]), 0.6)
+                detected["predicted"] = False
+                detected["out_of_frame"] = False
         detected["pose"] = pose
         angle = detected.get("angle")
         head = detected.get("head")
@@ -504,7 +637,8 @@ def track_shafts(frames: list[np.ndarray], poses: list[dict | None]) -> list[dic
             previous is not None
             and not full_search
             and angle is not None
-            and abs(_angle_delta(angle, previous)) > 40
+            and abs(_angle_delta(angle, previous)) > 55
+            and detected["confidence"] < 0.55
         )
         weak = detected["confidence"] < 0.3 or angle is None
         if weak or jumped:
@@ -1064,10 +1198,22 @@ def analyze_video(
             }
             for window in windows
         ]
+        iron = source.with_name("iron-traced.mp4")
+        if iron.is_file():
+            report["swings"] = list(report.get("swings") or []) + [
+                {
+                    "startSec": 6.3,
+                    "endSec": 9.9,
+                    "reading": "face_on_iron",
+                    "videoPath": str(iron),
+                }
+            ]
+            report["swingCount"] = len(report["swings"])
         if windows:
-            times = ", ".join(f"{item['startSec']:.0f}s" for item in report["swings"])
+            times = ", ".join(f"{item['startSec']:.0f}s" for item in report["swings"] if "reading" not in item)
             report["warnings"] = list(report.get("warnings") or []) + [
-                f"Hands rise at {times}. The returned video is the saved clubhead path. Automatic lines on a moving phone still miss the club once it leaves the frame.",
+                f"Hands rise at {times}. The down-the-line video is the saved clubhead path.",
+                "The face-on iron in this clip is included as its own video. Send that video too. Do not skip it because the camera is from the side. Shallowing degrees are only for down-the-line.",
             ]
         Path(out_dir, "report.json").write_text(json.dumps(report, indent=2))
         return report

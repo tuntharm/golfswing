@@ -78,12 +78,18 @@ export default defineTool({
     const output = await runAnalyzer(source, outDir, handed, playbackSpeed);
     const report = JSON.parse(await readFile(path.join(outDir, "report.json"), "utf8")) as Report;
     const result = shape(report, playbackSpeed);
-    if (output.videoPath) {
-      const video = await readFile(output.videoPath);
+    const videos = new Set<string>();
+    if (output.videoPath) videos.add(output.videoPath);
+    for (const swing of result.swings ?? []) {
+      if (swing.videoPath) videos.add(swing.videoPath);
+    }
+    let index = 0;
+    for (const file of videos) {
+      const video = await readFile(file);
       await ctx.artifacts.tag({
         kind: "swing-report",
-        key: `${ctx.session.id}:${path.basename(videoPath)}:${playbackSpeed}`,
-        title: `Swing ${result.reading}`,
+        key: `${ctx.session.id}:${path.basename(videoPath)}:${playbackSpeed}:${index}`,
+        title: `Swing ${result.reading} ${index + 1}`,
         data: {
           reading: result.reading,
           playbackSpeed,
@@ -92,6 +98,7 @@ export default defineTool({
         contents: video,
         contentType: "video/mp4",
       });
+      index += 1;
     }
     return result;
   },
